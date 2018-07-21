@@ -101,9 +101,22 @@ static const char *inboxPrefix = "_INBOX.";
 
 #define MAX_FRAMES (50)
 
+#define DUP_STRING(s, s1, s2) \
+        { \
+            (s1) = NATS_STRDUP(s2); \
+            if ((s1) == NULL) \
+                (s) = nats_setDefaultError(NATS_NO_MEMORY); \
+        }
+
+#define IF_OK_DUP_STRING(s, s1, s2) \
+        if ((s) == NATS_OK) \
+            DUP_STRING((s), (s1), (s2))
+
 extern int64_t gLockSpinCount;
 
 typedef void (*natsInitOnceCb)(void);
+
+typedef void (*natsOnCompleteCB)(void *closure);
 
 typedef struct __natsControl
 {
@@ -311,6 +324,10 @@ struct __natsSubscription
     int                         msgsLimit;
     int                         bytesLimit;
     int64_t                     dropped;
+
+    // Complete callback
+    natsOnCompleteCB            onCompleteCB;
+    void                        *onCompleteCBClosure;
 
 };
 

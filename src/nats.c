@@ -1291,6 +1291,38 @@ nats_setErrorReal(const char *fileName, const char *funcName, int line, natsStat
     return errSts;
 }
 
+void
+nats_updateErrTxt(const char *fileName, const char *funcName, int line, const void *errTxtFmt, ...)
+{
+    natsTLError *errTL  = _getTLError();
+    char        tmp[256];
+    va_list     ap;
+    int         n;
+
+    if ((errTL == NULL) || errTL->skipUpdate)
+        return;
+
+    tmp[0] = '\0';
+
+    va_start(ap, errTxtFmt);
+    nats_vsnprintf(tmp, sizeof(tmp), errTxtFmt, ap);
+    va_end(ap);
+
+    if (strlen(tmp) > 0)
+    {
+        n = snprintf(errTL->text, sizeof(errTL->text), "(%s:%d): %s",
+                     _getErrorShortFileName(fileName), line, tmp);
+        if ((n < 0) || (n >= (int) sizeof(errTL->text)))
+        {
+            int pos = ((int) strlen(errTL->text)) - 1;
+            int i;
+
+            for (i=0; i<3; i++)
+                errTL->text[pos--] = '.';
+        }
+    }
+}
+
 natsStatus
 nats_updateErrStack(natsStatus err, const char *func)
 {
